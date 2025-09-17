@@ -1,0 +1,60 @@
+import math
+
+# Earth radius in kilometers (mean radius)
+R = 6372.795
+
+pairs = [
+    # (lon1, lat1, lon2, lat2)
+    (37.609144, 55.787386, 31.269338, 58.522365),
+    (37.422192, 55.851725, 37.420114, 55.857907),
+    (122.645172, 55.984722, -171.079442, 66.093328)
+]
+
+def wrapped_delta_lon(lon1, lon2):
+    return (lon2 - lon1 + 540.0) % 360.0 - 180.0
+
+for pair in pairs:
+
+    lon1, lat1, lon2, lat2 = pair
+    phi1 = math.radians(lat1)
+    print("phi1", phi1)
+    phi2 = math.radians(lat2)
+    print("phi2", phi2)
+    dphi = math.radians(lat2 - lat1)
+    print("dphi", dphi)
+    dlambda = math.radians(wrapped_delta_lon(lon1, lon2))
+    print("dlambda", dlambda)
+
+    # ---------------------------
+    # 1) Pythagorean Theorem (flat Earth, incorrect for long distances)
+    # ---------------------------
+    # Just treating lat/lon as a plane grid
+    # dx = math.radians(lon2 - lon1) * math.cos((phi1 + phi2) / 2)  # adjust for latitude
+    dx = math.radians(wrapped_delta_lon(lon1, lon2)) * math.cos((phi1 + phi2) / 2)  # adjust for latitude
+    print("dx", dx)
+    dy = math.radians(lat2 - lat1)
+    print("dy", dy)
+    dist_pythagoras = R * math.sqrt(dx*dx + dy*dy)
+
+    # ---------------------------
+    # 2) Law of Cosines (on a sphere, more accurate but less stable for small distances)
+    # ---------------------------
+    cos_angle = math.sin(phi1) * math.sin(phi2) + math.cos(phi1) * math.cos(phi2) * math.cos(dlambda)
+    angle = math.acos(cos_angle)
+    dist_cosine = R * angle
+
+
+    # ---------------------------
+    # 3) Haversine Formula (most accurate and stable for all distances)
+    # ---------------------------
+    a = math.sin(dphi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    dist_haversine = R * c
+
+    # ---------------------------
+    # Print Results
+    # ---------------------------
+    print(f"Pythagorean (flat Earth approx): {dist_pythagoras:.8f} km")
+    print(f"Law of Cosines (sphere):        {dist_cosine:.8f} km")
+    print(f"Haversine (sphere, accurate):   {dist_haversine:.8f} km")
+
