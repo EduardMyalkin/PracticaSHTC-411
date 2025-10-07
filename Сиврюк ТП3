@@ -1,0 +1,81 @@
+import math
+import heapq
+
+# ====== ГРАФ СЕТИ ======
+nodes = ['A','B','C','D','E','F','G','H','I','J','K']
+
+edges = {
+    ('A','B'):4,
+    ('A','C'):5,
+    ('B','D'):3,
+    ('C','D'):6,
+    ('C','E'):4,
+    ('D','F'):5,
+    ('E','F'):3,
+    ('F','G'):4,
+    ('G','H'):5,
+    ('H','I'):3,
+    ('I','J'):4,
+    ('J','K'):6}
+
+graph = {v:{} for v in nodes}
+for (u,v),w in edges.items():
+    graph[u][v] = w
+    graph[v][u] = w
+
+#  1. СТЕПЕНИ УЗЛОВ 
+degree = {v: len(graph[v]) for v in nodes}
+print("Степени узлов:")
+for v in nodes:
+    print(v, ":", degree[v])
+
+#  2. ЦЕНТРАЛЬНЫЙ УЗЕЛ 
+sum_weights = {v: sum(graph[v].values()) for v in nodes}
+max_deg = max(degree.values())
+candidates = [v for v in nodes if degree[v] == max_deg]
+candidates = [v for v in candidates if sum_weights[v] > 0]
+min_sum = min(sum_weights[v] for v in candidates)
+central = sorted([v for v in candidates if sum_weights[v] == min_sum])[0]
+
+print("\nЦентральный узел:", central)
+
+# ====== 3. МАТРИЦА КОРРЕСПОНДЕНЦИЙ ======
+# функция для кратчайшего пути (Дейкстра)
+def shortest_path(start):
+    dist = {v: math.inf for v in nodes}
+    dist[start] = 0
+    pq = [(0, start)]
+    while pq:
+        d, u = heapq.heappop(pq)
+        if d > dist[u]:
+            continue
+        for v, w in graph[u].items():
+            nd = d + w
+            if nd < dist[v]:
+                dist[v] = nd
+                heapq.heappush(pq, (nd, v))
+    return dist
+
+# вычисляем кратчайшие расстояния
+distances = {v: shortest_path(v) for v in nodes}
+
+# поток обратно пропорционален расстоянию
+matrix = {i:{} for i in nodes}
+for i in nodes:
+    for j in nodes:
+        if i == j:
+            matrix[i][j] = 0
+        else:
+            d = distances[i][j]
+            if d == math.inf:
+                matrix[i][j] = 0
+            else:
+                matrix[i][j] = round(k / d, 3)
+
+print("\nМатрица корреспонденций (в людях):")
+print("\t" + "\t".join(nodes))
+for i in nodes:
+    row = [i]
+    for j in nodes:
+        row.append(str(matrix[i][j]))
+    print("\t".join(row))
